@@ -1,0 +1,207 @@
+﻿@page "/userform"
+@page "/userform/{Id:int}"
+
+@rendermode InteractiveAuto
+
+@using UserManagement.Client.Models
+@using UserManagement.Client.Services
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components
+
+@inject IUserService UserService
+@inject NavigationManager NavigationManager
+@inject IRoleService RoleService
+
+<h3>Create User</h3>
+
+<EditForm Model="Model"
+          OnValidSubmit="SaveUser">
+
+    <DataAnnotationsValidator />
+
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label>
+            <input type="checkbox"
+                   @bind="Model.UseUsernameAsDisplayName" />
+            Use username as display name
+        </label>
+    </div>
+    @if (!Model.UseUsernameAsDisplayName)
+    {
+        <div class="mb-3">
+            <label>First Name</label>
+            <input class="form-control" @bind="Model.FirstName" />
+        </div>
+
+        <div class="mb-3">
+            <label>Last Name</label>
+            <input class="form-control" @bind="Model.LastName" />
+        </div>
+    }
+
+    <div class="mb-3">
+        <label>Age</label>
+        <input class="form-control" type="number" @bind="Model.Age" />
+    </div>
+    @if (Model.Age > 0 && Model.Age < 21)
+    {
+        <div class="alert alert-warning">
+            Additional approval is required for users under 21.
+        </div>
+    }
+
+    <div class="mb-3">
+        <label>Username</label>
+        <input class="form-control" @bind="Model.Username" />
+    </div>
+
+    <div class="mb-3">
+        <label>Password</label>
+        <input class="form-control" type="password" @bind="Model.Password" />
+    </div>
+
+    <div class="mb-3">
+        <label>Roles</label>
+
+        @foreach (var role in Roles)
+        {
+            <div>
+                <input type="checkbox"
+                       @onchange="e => OnRoleChanged(role.Id, (bool)e.Value!)" />
+
+                @role.Name
+            </div>
+        }
+    </div>
+    @if (IsAdminSelected)
+    {
+        <div class="alert alert-warning">
+            This user will have full access to the application.
+        </div>
+    }
+
+    <div class="mb-3">
+        <label>Active</label>
+        <input type="checkbox" @bind="Model.IsActive" />
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="alert alert-danger">
+            @ErrorMessage
+        </div>
+    }
+    <button type ="submit" class="btn btn-primary" disabled="@(!Model.RoleIds.Any() || IsSaving)">
+        Save
+    </button>
+    @if (IsSaving)
+    {
+        <div class="spinner-border text-primary"
+             role="status">
+            <span class="visually-hidden">
+                Saving...
+            </span>
+        </div>
+    }
+</EditForm>
+
+
+@code
+{
+    private CreateUserRequest Model = new();
+    private bool IsAdminSelected;
+    private bool IsSaving;
+    [Parameter]
+    public int? Id { get; set; }
+    private string? ErrorMessage;
+    private async Task SaveUser()
+    {
+        if (Model.UseUsernameAsDisplayName)
+        {
+            Model.FirstName = Model.Username;
+            Model.LastName = Model.Username;
+        }
+
+        IsSaving = true;
+
+        try
+        {
+            if (Id.HasValue)
+            {
+                var request = new UpdateUserRequest
+                {
+                    FirstName = Model.FirstName,
+                    LastName = Model.LastName,
+                    Age = Model.Age,
+                    Username = Model.Username,
+                    Password = Model.Password,
+                    IsActive = Model.IsActive,
+                    RoleIds = Model.RoleIds
+                };
+
+                await UserService.UpdateUserAsync(
+                    Id.Value,
+                    request);
+            }
+            else
+            {
+                await UserService.CreateUserAsync(Model);
+            }
+
+            NavigationManager.NavigateTo("/users");
+        }
+        catch
+        {
+            ErrorMessage = "An error occurred while saving the user.";
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+
+    private List<RoleDto> Roles = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        Roles = await RoleService.GetRolesAsync();
+
+        if (Id.HasValue)
+        {
+            var user = await UserService.GetUserAsync(Id.Value);
+
+            if (user != null)
+            {
+                Model.FirstName = user.FirstName;
+                Model.LastName = user.LastName;
+                Model.Age = user.Age;
+                Model.Username = user.Username;
+                Model.IsActive = user.IsActive;
+                Model.RoleIds = user.RoleIds;
+            }
+        }
+    }
+
+    private void OnRoleChanged(int roleId, bool selected)
+    {
+        var adminRole = Roles.FirstOrDefault(r => r.Name == "Admin");
+
+        if (selected)
+        {
+            if (!Model.RoleIds.Contains(roleId))
+            {
+                Model.RoleIds.Add(roleId);
+            }
+        }
+        else
+        {
+            Model.RoleIds.Remove(roleId);
+        }
+
+        IsAdminSelected = adminRole != null &&
+                          Model.RoleIds.Contains(adminRole.Id);
+    }
+}

@@ -1,0 +1,33 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Build results
+bin/
+obj/
+
+# Rider
+.idea/
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
+
+# NuGet
+packages/
+
+# IIS Express
+applicationhost.config
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Test results
+TestResults/
+
+# Publish output
+publish/
