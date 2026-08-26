@@ -21,3 +21,11 @@
     <a href="" class="reload">Reload</a>
     <a class="dismiss">🗙</a>
 </div>
+@if (OperatingSystem.IsBrowser())
+{
+    <h5 style="color:rgb(243 159 167)">Blazor WebAssembly</h5>
+}
+else
+{
+    <h5 style="color:rgb(243 159 167)">Blazor Server</h5>
+}
