@@ -24,7 +24,6 @@ else
                 <th>Roles</th>
                 <th>Active</th>
                 <th>Actions</th>
-                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -35,12 +34,6 @@ else
                     <td>@user.Username</td>
                     <td>@string.Join(", ", user.Roles)</td>
                     <td>@user.IsActive</td>
-                    <td>
-                        <button class="btn btn-danger btn-sm"
-                                @onclick="() => DeleteUser(user.Id)">
-                            Delete
-                        </button>
-                    </td>
                     <td>
                         <button class="btn btn-warning btn-sm"
                                 @onclick="() => EditUser(user.Id)">
